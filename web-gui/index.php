@@ -1,7 +1,7 @@
-
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
 
 <!-- Initializing  Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -170,7 +170,7 @@ foreach ($shFiles as $file) {
 
 <p>Developer: <A href="mailto:olli.ranta@gmail.com">Olli</A><br>
 Version: 20250124
- 
+
 <script>
 
 // var version = 20250124;
@@ -301,7 +301,7 @@ function countTiles(northWestLng, northWestLat, southEastLng, southEastLat) {
 	return(tiles);
 }
 
-//function submitForm() { 
+//function submitForm() {
 //	document.getElementById("clk").disabled = true;
 //	return;
 //}
