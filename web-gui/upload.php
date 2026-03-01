@@ -5,25 +5,30 @@
 
 # echo "Overwrite:" . $_POST['overwrite'] . "<BR>\r\n";
 
+libxml_use_internal_errors(true);
+
 $tmpName = $_FILES['fileToUpload']['tmp_name'];
-# $kmlFileName = htmlspecialchars( basename( $_FILES['fileToUpload']['name']));
-$kmlFileName = clean( basename( $_FILES['fileToUpload']['name']));
-$userName = $_POST['name'];
-$NWlon = $_POST['NWlon'];
-$NWlat = $_POST['NWlat'];
-$SElon = $_POST['SElon'];
-$SElat = $_POST['SElat'];
-$saveCookie = $_POST['cookie'];
+
+$dom = new \DOMDocument();
+
+if (empty($tmpName) || !$dom->load($tmpName)) {
+  die("Invalid .kml file");
+}
+$userName = clean($_POST['name']);
+$NWlon = (float) $_POST['NWlon'] ?? 0;
+$NWlat = (float) $_POST['NWlat'] ?? 0;
+$SElon = (float) $_POST['SElon'] ?? 0;
+$SElat = (float) $_POST['SElat'] ?? 0;
+$saveCookie = !empty($_POST['cookie']);
 $target_dir = "../../jobs/missing_squadrats/";
+$fileName = date('Y-m-d') . '-' . $userName;
 
-# https://stackoverflow.com/questions/41475937/replacing-german-chars-with-umlaute-to-simple-latin-chars-php
-$extraCharsToRemove = array("\"","'","`","^","~");
-$userName = str_replace($extraCharsToRemove,"",iconv("utf-8","ASCII//TRANSLIT",$userName));
-$userName = clean($userName);
-
+if (!$NWlon || !$NWlat || !$SElon || !$SElat) {
+  die('Invalid coordinates.');
+}
 # echo "Name: " . $userName . "<BR>\r\n";
 
-if ($saveCookie == true) {
+if ($saveCookie) {
   # $mapCenter = array("latCenter"=>61.24, "lonCenter"=>24.90);
   $mapCenter = array("latCenter"=>$SElat + (($NWlat - $SElat) / 2), "lonCenter"=>$SElon + (($NWlon - $SElon) / 2));
   # https://www.w3schools.com/php/php_cookies.asp
@@ -35,66 +40,39 @@ if ($saveCookie == true) {
 function clean($string) {
    $string = str_replace(' ', '_', $string); // Replaces all spaces with hyphens.
 
-   return preg_replace('/[^A-Za-z0-9\-\.]/', '', $string); // Removes special chars.
+   return preg_replace('/[^A-Za-z0-9]/', '', $string); // Removes special chars.
 }
 ?>
 
 <html>
+<head>
+  <meta charset="utf-8">
+</head>
 <body>
 
 <h1>Upload a kml file</h1>
 
-<p>Everything ok. Please go back to the main page<br>
+<p>Everything ok. Please go back to the main page</p><br>
 
 <?php
 
-# https://www.w3schools.com/php/php_file_upload.asp
-$target_file = $target_dir . str_replace(".kml", "-" . $userName . ".kml", $kmlFileName);
 #echo "OSM file name: " . $target_file . "<BR>\r\n";
-
-if (move_uploaded_file($tmpName, $target_file)) {
-	echo "The file ". $target_file . " has been uploaded.<BR>\r\n";
+if (move_uploaded_file($tmpName, $target_dir . $fileName . '.kml')) {
+	echo "The file ". $fileName . " has been uploaded.<BR>\r\n";
 } else {
 		echo "Sorry, there was an error uploading your file.<BR>\r\n";
-		$uploadOk = 0;
+    exit;
 }
 
-$kmlFileNameName = str_replace(".kml", "-" . $userName . ".kml", $kmlFileName);
-#echo "KML file name name: " . $kmlFileNameName . "<BR>\r\n";
-if (end(explode('/',__DIR__)) == "beta") {
-  $command = "/home/users/oranta/python3/venv/bin/python3 /var/www/10/oranta/sites/oranta.kapsi.fi/src/missing_squadrats/beta/missing_squadrats.py $kmlFileNameName $userName $NWlon $NWlat $SElon $SElat >> /home/users/oranta/missingSquadrats.log 2>&1";
-} else {
-  $command = "/home/users/oranta/python3/venv/bin/python3 /var/www/10/oranta/sites/oranta.kapsi.fi/src/missing_squadrats/missing_squadrats.py $kmlFileNameName $userName $NWlon $NWlat $SElon $SElat >> /home/users/oranta/missingSquadrats.log 2>&1";
-}
-
-
-#$output = exec("export PYTHONPATH=/home/users/oranta/.local/lib/python3.9/site-packages && python3 ../../src/missing_squadrats/missing_squadrats.py", $target_file, "2>&1", $out, $status);
-#$output = shell_exec($command);
-#echo $output . "<BR>\r\n";
-
-$shFileName = str_replace(".kml", "-" . $userName . ".sh", $kmlFileName);
-$myfile = fopen($shFileName, "w") or die("Unable to open file!");
-fwrite($myfile, "#!/usr/bin/bash\r\n");
-fwrite($myfile, $command);
-fclose($myfile);
-rename($shFileName, "../../jobs/missing_squadrats/" . $shFileName);
-if (chmod("../../jobs/missing_squadrats/" . $shFileName, 0755)) {
-	#echo "Run script permissions ok.<BR>\r\n";
-} else {
-	#echo "Sorry, there was a problem with run script permissions.<BR>\r\n";
-	$uploadOk = 0;
-}
-
-# $command = "sh ../../jobs/missing_squadrats/" . $shFileName;
-
-# $logFilePath = "/home/10/oranta/missingSquadrats.log";
-# $toLog = date("%Y.%m.%d %H:%i:%s");
-# $myfile = file_put_contents($logFilePath, $toLog.PHP_EOL , FILE_APPEND | LOCK_EX);
-
-# exec($command);
-# system($command);
-
-# echo "<BR>\r\n<A href=\"img/veloviewer-" . date('Ymd') . "-" . $userName . ".img\">" . "veloviewer-" . date('Ymd') . "-" . $userName . ".img" . "</A><BR>\r\n"
+$job = implode(',', [
+  'filename' => $fileName,
+  'username' => $userName,
+  'nwlon' => $NWlon,
+  'nwlat' => $NWlat,
+  'selon' => $SElon,
+  'selat' => $SElat,
+]);
+file_put_contents($target_dir . $fileName . '.csv', $job);
 ?>
 
 </body>
