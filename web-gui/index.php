@@ -225,8 +225,18 @@ if (getCookie("MissingSquadrats") == null) {
 }
 else {
 	var data = JSON.parse(getCookieByName("MissingSquadrats"));
-	var latCenter = data.mapCenterLat;
-	var lonCenter = data.mapCenterLon;
+  if (typeof data.mapCenterLat === 'undefined') {
+    var latCenter = data.latCenter;
+  }
+  else {
+    var latCenter = data.mapCenterLat;
+  }
+  if (typeof data.mapCenterLat === 'undefined') {
+    var latCenter = data.lonCenter;
+  }
+  else {
+    var latCenter = data.mapCenterLon;
+  }
   var squadratinhosColor = data.squadratinhosColor;
   var squadratinhosLineWeight = data.squadratinhosLineWeight;
 }
