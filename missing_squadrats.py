@@ -156,6 +156,11 @@ def writeMkgmapStyleTyp(squadratinhosLineWeight, squadratinhosColor, script_dir)
     file.write(data_to_write)
   return
 
+def readMapName():
+  with open(logFilePath + "mapName.txt", "r") as f:
+    lastLine = f.readlines()[-1]
+  return lastLine
+
 def osm2img():
   # Create output dir
   dateNow = datetime.datetime.now()
@@ -166,7 +171,8 @@ def osm2img():
   except OSError as error: 
     print(error) 
   abs_osmfile_path = abs_dir_path / "newsquadrats.osm"
-
+  # Read mapname
+  mapName = readMapName().split(",")[-1]
   shutil.move("newsquadrats.osm", abs_osmfile_path)
 
 # Create Garmin map
@@ -175,7 +181,8 @@ def osm2img():
   mkgmap_output_path = "--output-dir=" + str(abs_dir_path)
   mkgmap_family_id = "--family-id=" + str(int(dir) - 20200000)
   mkgmap_description = "--description=" + "squadrats-" + str(int(dir))
-  mkgmap_mapname = "--mapname=" + str(int(dir) + 43040000)
+  # mkgmap_mapname = "--mapname=" + str(int(dir) + 43040000)
+  mkgmap_mapname = "--mapname=" + str(mapName)
   mkgmap_overview_mapnumber = "--overview-mapnumber=" + str(int(dir) + 43040000 - 1)
   mkgmap_config_path = "--read-config=" + str(missing_squadrats_dir) + "config.txt"
   mkgmap_typ_path = str(missing_squadrats_dir) + "typ.txt"
@@ -193,6 +200,15 @@ def osm2img():
   new_img_dir = missing_squadrats_dir + "../../www/missing_squadrats/img/"
   shutil.copy(new_name, new_img_dir)
   return
+
+# https://www.geeksforgeeks.org/append-text-or-lines-to-a-file-in-python/
+def append_text_to_file(file_path, text_to_append):
+  try:
+    with open(file_path, 'a') as file:
+      file.write(text_to_append + '\n')
+    # print('Text appended to {file_path} successfully')
+  except Exception as e:
+    print('Error: {e}')
 
 def cleaning():
   baseDir = Path(__file__).parent.parent.parent
@@ -246,8 +262,8 @@ squadratinhosColor = "#" + arguments[8]
 
 # Variables
 
-logFilePath = "missingSquadrats.log"
-logFile = open(logFilePath, "a")  # append mode
+logFilePath = "/home/users/oranta/"
+logFile = open(logFilePath + "missingSquadrats.log", "a")  # append mode
 zoom = 17
 script_dir = os.path.dirname(__file__) + "/" #<-- absolute dir the script is in
 missing_squadrats_dir = script_dir
