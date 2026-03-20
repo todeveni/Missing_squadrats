@@ -127,6 +127,11 @@ def shapely2osm(nodes, ways):
     f.write("</osm>\n")
   return
 
+def readMapName():
+  with open(logFilePath + "mapName.txt", "r") as f:
+    lastLine = f.readlines()[-1]
+  return lastLine
+
 def writeMkgmapStyleTyp(squadratinhosLineWeight, squadratinhosColor, script_dir):
   mkgmapStyle = ["<<<version>>>",
 "0",
@@ -166,6 +171,8 @@ def osm2img():
   except OSError as error: 
     print(error) 
   abs_osmfile_path = abs_dir_path / "newsquadrats.osm"
+  # Read mapname plus 1
+  mapName = int(readMapName().split(",")[-1].replace("\n", " ")) + 1
 
   shutil.move("newsquadrats.osm", abs_osmfile_path)
 
@@ -174,8 +181,9 @@ def osm2img():
   abs_mkgmapfile_path = Path(abs_dir_path).parent / "src" / "ext" / "mkgmap-r4916" / "mkgmap.jar"
   mkgmap_output_path = "--output-dir=" + str(abs_dir_path)
   mkgmap_family_id = "--family-id=" + str(int(dir) - 20200000)
-  mkgmap_description = "--description=" + "squadrats-" + str(int(dir))
-  mkgmap_mapname = "--mapname=" + str(int(dir) + 43040000)
+  mkgmap_description = "--description=" + "sq-" + str(int(dir))
+  # mkgmap_mapname = "--mapname=" + str(int(dir) + 43040000)
+  mkgmap_mapname = "--mapname=" + str(mapName)
   mkgmap_overview_mapnumber = "--overview-mapnumber=" + str(int(dir) + 43040000 - 1)
   mkgmap_config_path = "--read-config=" + str(missing_squadrats_dir) + "config.txt"
   mkgmap_typ_path = str(missing_squadrats_dir) + "typ.txt"
@@ -187,12 +195,21 @@ def osm2img():
   subprocess.run(["java", "-ea", "-jar", abs_mkgmapfile_path, "--transparent", "--gmapsupp", mkgmap_family_id, mkgmap_mapname, mkgmap_overview_mapnumber, mkgmap_style_path, mkgmap_description, mkgmap_input, mkgmap_output_path, mkgmap_typ_path])
 # Rename map file
   old_name = abs_dir_path / "gmapsupp.img"
-  new_name_file = "squadrats-" + str(int(dir)) + "-" + userName + ".img"
+  new_name_file = "sq-" + str(int(dir)) + "-" + userName + ".img"
   new_name = abs_dir_path / new_name_file
   os.rename(old_name, new_name)
   new_img_dir = missing_squadrats_dir + "../../www/missing_squadrats/img/"
   shutil.copy(new_name, new_img_dir)
-  return
+  return mapName
+
+# https://www.geeksforgeeks.org/append-text-or-lines-to-a-file-in-python/
+def append_text_to_file(file_path, text_to_append):
+  try:
+    with open(file_path, 'a') as file:
+      file.write("\n" + text_to_append)
+    # print('Text appended to {file_path} successfully')
+  except Exception as e:
+    print('Error: {e}')
 
 def cleaning():
   baseDir = Path(__file__).parent.parent.parent
@@ -246,8 +263,8 @@ squadratinhosColor = "#" + arguments[8]
 
 # Variables
 
-logFilePath = "missingSquadrats.log"
-logFile = open(logFilePath, "a")  # append mode
+logFilePath = "/home/users/oranta/"
+logFile = open(logFilePath + "missingSquadrats.log", "a")  # append mode
 zoom = 17
 script_dir = os.path.dirname(__file__) + "/" #<-- absolute dir the script is in
 missing_squadrats_dir = script_dir
@@ -299,7 +316,7 @@ print('Time after osm write: ', time.perf_counter() - tic, ' seconds<BR>\r\n')
 print('Number of tiles: ', (gridSE[1] - gridNW[1]) *  (gridSE[0] - gridNW[0]))
 
 # Create an img file from the osm file
-osm2img()
+mapName = osm2img()
 
 # Remove temporary files
 # https://www.geeksforgeeks.org/delete-a-directory-or-file-using-python/
@@ -308,8 +325,11 @@ cleaning()
 print('Total time: ', time.perf_counter() - tic, ' seconds<BR>\r\n')
 
 timeNow = datetime.datetime.now()
-timeStamp = timeNow.strftime("%d.%m.%Y %H:%M:%S")
+timeStamp = timeNow.strftime("%d/%m/%Y %H:%M:%S")
 timeTotal = time.perf_counter() - tic
+
+# Write new mapName to the file
+append_text_to_file(logFilePath + "mapName.txt", timeStamp + "," + str(zoom) + "," + str((gridSE[1] - gridNW[1]) * (gridSE[0] - gridNW[0])) + "," + str(mapName) + "\n")
 
 logFile.write(timeStamp + ";" + userName + ";" + str(timeTotal) + "\n")
 
