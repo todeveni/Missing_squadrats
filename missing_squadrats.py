@@ -172,7 +172,8 @@ def osm2img():
     print(error) 
   abs_osmfile_path = abs_dir_path / "newsquadrats.osm"
   # Read mapname plus 1
-  mapName = int(readMapName().split(",")[-1]) + 1
+  mapName = int(readMapName().split(",")[-1].replace("\n", " ")) + 1
+
   shutil.move("newsquadrats.osm", abs_osmfile_path)
 
 # Create Garmin map
@@ -205,7 +206,7 @@ def osm2img():
 def append_text_to_file(file_path, text_to_append):
   try:
     with open(file_path, 'a') as file:
-      file.write(text_to_append + '\n')
+      file.write("\n" + text_to_append)
     # print('Text appended to {file_path} successfully')
   except Exception as e:
     print('Error: {e}')
