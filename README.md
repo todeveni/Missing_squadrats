@@ -43,3 +43,4 @@ python3 missing_squadrats.py squadrats-2026-02-01.kml Olli 24.859027260564833 60
 - [How to create a tile grid overlay for the Garmin Edge based on VeloViewer unexplored tiles](https://peatfaerie.medium.com/how-to-create-a-tile-grid-overlay-for-the-garmin-edge-based-on-veloviewer-unexplored-tiles-5b36e7c401bd)
 - [https://github.com/Myrtillus/arkiruudut](https://github.com/Myrtillus/arkiruudut)
 - [https://colab.research.google.com/drive/1jU3_k32zwaM1d1ftZv-9XOaO_dHWCWr_](https://colab.research.google.com/drive/1jU3_k32zwaM1d1ftZv-9XOaO_dHWCWr_)
+- [https://www.mail-archive.com/mkgmap-dev@lists.mkgmap.org.uk/msg01125.html](https://www.mail-archive.com/mkgmap-dev@lists.mkgmap.org.uk/msg01125.html)
