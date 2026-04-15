@@ -38,10 +38,9 @@ if (isset($_COOKIE[$cookie_name])) {
     if (property_exists($a, "squadratinhosColor")) {
       $squadratinhosColor = $a->squadratinhosColor;
       $squadratinhosLineWeight = $a->squadratinhosLineWeight;
-      echo "squadratinhosColor: $squadratinhosColor<br>";
     } else {
       $squadratinhosColor = "#853A3A";
-      $squadratinhosLineWeight = 2;
+      $squadratinhosLineWeight = 5;
     }
     $squadratsColor = "#" . $lineColor;
     $squadratsLineWeight = $lineWeight;
@@ -51,7 +50,7 @@ if (isset($_COOKIE[$cookie_name])) {
       $squadratsLineWeight = $a->squadratsLineWeight;
     } else {
       $squadratsColor = "#853A3A";
-      $squadratsLineWeight = 2;
+      $squadratsLineWeight = 5;
     }
     $squadratinhosColor = "#" . $lineColor;
     $squadratinhosLineWeight = $lineWeight;
@@ -59,18 +58,17 @@ if (isset($_COOKIE[$cookie_name])) {
 } else {
   if ($zoomLevel == 14) {
     $squadratinhosColor = "#853A3A";
-    $squadratinhosLineWeight = 2;
+    $squadratinhosLineWeight = 5;
     $squadratsColor = "#" . $lineColor;
     $squadratsLineWeight = $lineWeight;
   } elseif ($zoomLevel == 17) {
     $squadratinhosColor = "#" . $lineColor;
     $squadratinhosLineWeight = $lineWeight;
     $squadratsColor = "#853A3A";
-    $squadratsLineWeight = 2;
+    $squadratsLineWeight = 5;
   }
 }
 
-echo "Cookie data: $squadratinhosLineWeight $squadratinhosColor $squadratsLineWeight $squadratsColor<br>";
 if ($saveCookie) {
   # $mapCenter = array("latCenter"=>61.24, "lonCenter"=>24.90);
   $missinSquadrats = array("mapCenterLat"=>$SElat + (($NWlat - $SElat) / 2),

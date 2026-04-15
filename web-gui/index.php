@@ -38,7 +38,7 @@
   Line color
   <input type="color" id="lineColor" name="lineColor" value="#853A3A">
   Line weight
-  <input type="number" id="lineWeight" name="lineWeight" min="1" max="5" value="5"><br>
+  <input type="number" id="lineWeight" name="lineWeight" min="1" max="10" value="5"><br>
   <label for="zoomLevel">Select a zoom level:</label>
   <select id="zoomLevel" name="zoomLevel">
     <option selected value="17">Squadratinhos</option>
@@ -206,8 +206,10 @@ function getCookieByName(name) {
 if (getCookie("MissingSquadrats") == null) {
 	var latCenter = 60.24;
 	var lonCenter = 24.90;
-  var lineColor = "#853A3A";
-  var lineWeight = 2;
+  var squadratinhosColor = "#853A3A";
+  var squadratinhosLineWeight = 5;
+  var squadratsColor = "#853A3A";
+  var squadratsLineWeight = 5;
 } else {
 	var data = JSON.parse(getCookieByName("MissingSquadrats"));
   if (typeof data.mapCenterLat === 'undefined') {
@@ -230,7 +232,7 @@ if (getCookie("MissingSquadrats") == null) {
     var lineColor = squadratinhosColor;
   }
   if (typeof data.squadratinhosLineWeight === 'undefined') {
-    var squadratinhosLineWeight = 2;
+    var squadratinhosLineWeight = 5;
   }
   else {
     var squadratinhosLineWeight = data.squadratinhosLineWeight;
@@ -243,7 +245,7 @@ if (getCookie("MissingSquadrats") == null) {
     var squadratsColor = data.squadratsColor;
   }
   if (typeof data.squadratsLineWeight === 'undefined') {
-    var squadratsLineWeight = 4;
+    var squadratsLineWeight = 5;
   }
   else {
     var squadratsLineWeight = data.squadratsLineWeight;
