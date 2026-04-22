@@ -1,26 +1,55 @@
 <!DOCTYPE html>
 
 <?php
-# https://www.w3schools.com/PHP/php_file_upload.asp
 
-# echo "Overwrite:" . $_POST['overwrite'] . "<BR>\r\n";
+function clean($string) {
+   $string = str_replace(' ', '_', $string); // Replaces all spaces with hyphens.
 
-libxml_use_internal_errors(true);
+   return preg_replace('/[^A-Za-z0-9]/', '', $string); // Removes special chars.
+}
+
+function validate_squadrats_kml($file): bool {
+  libxml_use_internal_errors(true);
+
+  $dom = new \DOMDocument();
+  if (!$dom->load($file)) {
+    return FALSE;
+  }
+
+  // Search for Kml->Document->Placemark elements.
+  $placemarks = $dom->getElementsByTagName('kml')->item(0)
+    ?->getElementsByTagName('Document')->item(0)
+    ?->getElementsByTagName('Placemark');
+
+  if (!$placemarks->length > 0) {
+    return FALSE;
+  }
+
+  // Search for Placemark->name element with the value of "squadrats".
+  foreach ($placemarks as $placemark) {
+    $name = $placemark->getElementsByTagName('name')->item(0)?->textContent;
+
+    if ($name === 'squadrats') {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
 
 $tmpName = $_FILES['fileToUpload']['tmp_name'];
 
-$dom = new \DOMDocument();
-
-if (empty($tmpName) || !$dom->load($tmpName)) {
-  die("Invalid .kml file");
+if (empty($tmpName) || !validate_squadrats_kml($tmpName)) {
+  die("Invalid .kml file.");
 }
+
 $userName = clean($_POST['name']);
 $NWlon = (float) $_POST['NWlon'] ?? 0;
 $NWlat = (float) $_POST['NWlat'] ?? 0;
 $SElon = (float) $_POST['SElon'] ?? 0;
 $SElat = (float) $_POST['SElat'] ?? 0;
 $squadratinhosLineWeight = (float) $_POST['squadratinhosLineWeight'] ?? 0;
-$squadratinhosColor = str_replace("#","",$_POST['squadratinhosColor']);
+$squadratinhosColor = str_replace("#", "", clean($_POST['squadratinhosColor']));
 $saveCookie = !empty($_POST['cookie']);
 $target_dir = "../../jobs/missing_squadrats/";
 $fileName = date('Y-m-d') . '-' . $userName;
@@ -32,22 +61,18 @@ if (!$NWlon || !$NWlat || !$SElon || !$SElat) {
 
 if ($saveCookie) {
   # $mapCenter = array("latCenter"=>61.24, "lonCenter"=>24.90);
-  $missinSquadrats = array("mapCenterLat"=>$SElat + (($NWlat - $SElat) / 2),
-  "mapCenterLon"=>$SElon + (($NWlon - $SElon) / 2),
-  "squadratinhosLineWeight"=>$squadratinhosLineWeight,
-  "squadratinhosColor"=>"#" . $squadratinhosColor);
+  $missinSquadrats = array(
+    "mapCenterLat" => $SElat + (($NWlat - $SElat) / 2),
+    "mapCenterLon" => $SElon + (($NWlon - $SElon) / 2),
+    "squadratinhosLineWeight" => $squadratinhosLineWeight,
+    "squadratinhosColor" => "#" . $squadratinhosColor,
+  );
   # $squadratinhos = array("squadratinhosLineWeight"=>$squadratinhosLineWeight, "squadratinhosColor"=>$squadratinhosColor);
   # https://www.w3schools.com/php/php_cookies.asp
   # https://stackoverflow.com/questions/32567709/how-to-store-raw-json-string-in-cookie-with-php
   setcookie("MissingSquadrats", json_encode($missinSquadrats), time() + (86400 * 30)); // 86400 = 1 day
 }
 
-# https://stackoverflow.com/questions/14114411/remove-characters-that-arent-letters-and-numbers-replace-space-with-a-hyphen
-function clean($string) {
-   $string = str_replace(' ', '_', $string); // Replaces all spaces with hyphens.
-
-   return preg_replace('/[^A-Za-z0-9]/', '', $string); // Removes special chars.
-}
 ?>
 
 <html>
