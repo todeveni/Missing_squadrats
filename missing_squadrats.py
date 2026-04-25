@@ -35,7 +35,10 @@ def num2deg(xtile, ytile, zoom):
 def readKmlFile(kmlFilePath):
   with open(kmlFilePath) as f:
     data = f.read()
-    data = data.split("<name>squadratinhos</name>")[1].split("<name>ubersquadrat</name>")[0].splitlines()
+    if zoom == 17:
+      data = data.split("<name>squadratinhos</name>")[1].split("<name>ubersquadrat</name>")[0].splitlines()
+    elif zoom == 14:
+      data = data.split("<name>squadrats</name>")[1].split("<name>squadratinhos</name>")[0].splitlines()
   return data
 
 def createGridPoints(gridNW, gridSE, zoom):
@@ -113,7 +116,7 @@ def points2lines(tilePoints, nodeID, wayID):
   nodes.sort(reverse=False)
   return nodes, ways
 
-def shapely2osm(nodes, ways):
+def shapely2osm(nodes, ways, zoom):
   with open("newsquadrats.osm", "w") as f:
     f.write("<?xml version='1.0' encoding='UTF-8'?>\n")
     f.write("<osm version='0.6' upload='false' generator='JOSM'>\n")
@@ -123,7 +126,10 @@ def shapely2osm(nodes, ways):
       f.write("  <way id='" + str(x[0]) + "'>\n")
       for y in x[1:]:
         f.write("    <nd ref='" + str(y) + "' />\n")
-      f.write("    <tag k='type' v='squadratinhos' />\n  </way>\n")
+      if zoom == 14:
+        f.write("    <tag k='type' v='squadrats' />\n  </way>\n")
+      elif zoom == 17:
+        f.write("    <tag k='type' v='squadratinhos' />\n  </way>\n")
     f.write("</osm>\n")
   return
 
@@ -132,23 +138,27 @@ def readMapName():
     lastLine = f.readlines()[-1]
   return lastLine
 
-def writeMkgmapStyleTyp(squadratinhosLineWeight, squadratinhosColor, script_dir):
+def writeMkgmapStyleTyp(lineWeight, lineColor, script_dir, zoom):
+  if zoom == 14:
+    lineType = "0x010f1e"
+  elif zoom == 17:
+    lineType = "0x010f1f"
   mkgmapStyle = ["<<<version>>>",
 "0",
 "<<<info>>>",
 "version : 1.0",
 "<<<options>>>",
 "<<<lines>>>",
-"type=squadratinhos [0x1d resolution 20]",
-"type=squadrats [0x1e resolution 20]",
+"type=squadratinhos [0x010f1f resolution 20]",
+"type=squadrats [0x010f1e resolution 20]",
 "type=grid [0x1f resolution 20]"]
 
   typTxt = ["[_line]",
-"Type=0x1d",
+"Type=" + lineType,
 "UseOrientation=N",
-"LineWidth=" + squadratinhosLineWeight,
+"LineWidth=" + lineWeight,
 "Xpm=\"0 0 1 0\"",
-"\"a c " + squadratinhosColor + "\"",
+"\"a c " + lineColor + "\"",
 "FontStyle=NoLabel",
 "[end]"]
 
@@ -156,7 +166,7 @@ def writeMkgmapStyleTyp(squadratinhosLineWeight, squadratinhosColor, script_dir)
     data_to_write = '\n'.join(mkgmapStyle)
     file.write(data_to_write)
 
-  with open(script_dir + "typ.txt", 'w') as file:
+  with open(script_dir + "sq.txt", 'w') as file:
     data_to_write = '\n'.join(typTxt)
     file.write(data_to_write)
   return
@@ -180,13 +190,18 @@ def osm2img():
 # https://peatfaerie.medium.com/how-to-create-a-tile-grid-overlay-for-the-garmin-edge-based-on-veloviewer-unexplored-tiles-5b36e7c401bd
   abs_mkgmapfile_path = Path(abs_dir_path).parent / "src" / "ext" / "mkgmap-r4916" / "mkgmap.jar"
   mkgmap_output_path = "--output-dir=" + str(abs_dir_path)
-  mkgmap_family_id = "--family-id=" + str(int(dir) - 20200000)
-  mkgmap_description = "--description=" + "sq-" + str(int(dir))
-  # mkgmap_mapname = "--mapname=" + str(int(dir) + 43040000)
+#  mkgmap_family_id = "--family-id=" + str(int(dir) - 20200000)
+  mkgmap_family_id = "--family-id=" + str(mapName - 10000000)
+  if zoom == 14:
+    mkgmap_description = "--description=" + "sq-big-" + str(int(dir)) + "-" + userName
+    new_name_file = "sq-big-" + str(int(dir)) + "-" + userName + ".img"
+  elif zoom == 17:
+    mkgmap_description = "--description=" + "sq-small-" + str(int(dir)) + "-" + userName
+    new_name_file = "sq-small-" + str(int(dir)) + "-" + userName + ".img"
   mkgmap_mapname = "--mapname=" + str(mapName)
   mkgmap_overview_mapnumber = "--overview-mapnumber=" + str(int(dir) + 43040000 - 1)
   mkgmap_config_path = "--read-config=" + str(missing_squadrats_dir) + "config.txt"
-  mkgmap_typ_path = str(missing_squadrats_dir) + "typ.txt"
+  mkgmap_typ_path = str(missing_squadrats_dir) + "sq.txt"
   mkgmap_style_path = "--style-file=" + str(missing_squadrats_dir) + "mkgmap.style"
   mkgmap_input = "--input-file=" + str(abs_osmfile_path)
 
@@ -195,7 +210,6 @@ def osm2img():
   subprocess.run(["java", "-ea", "-jar", abs_mkgmapfile_path, "--transparent", "--gmapsupp", mkgmap_family_id, mkgmap_mapname, mkgmap_overview_mapnumber, mkgmap_style_path, mkgmap_description, mkgmap_input, mkgmap_output_path, mkgmap_typ_path])
 # Rename map file
   old_name = abs_dir_path / "gmapsupp.img"
-  new_name_file = "sq-" + str(int(dir)) + "-" + userName + ".img"
   new_name = abs_dir_path / new_name_file
   os.rename(old_name, new_name)
   new_img_dir = missing_squadrats_dir + "../../www/missing_squadrats/img/"
@@ -256,8 +270,9 @@ NWlon = float(arguments[3]) # lon, ytile, col, index 1, ~25
 NWlat = float(arguments[4]) # lat, xtile, row, index 0, ~60
 SElon = float(arguments[5]) # lon, ytile, col, index 1, ~25
 SElat = float(arguments[6]) # lat, xtile, row, index 0, ~60
-squadratinhosLineWeight = arguments[7]
-squadratinhosColor = "#" + arguments[8]
+lineWeight = arguments[7]
+lineColor = "#" + arguments[8]
+zoom = float(arguments[9])
 # squadratinhosLineWidth = "4"
 # squadratinhosColor = "#44a832"
 
@@ -265,7 +280,7 @@ squadratinhosColor = "#" + arguments[8]
 
 logFilePath = "/home/users/oranta/"
 logFile = open(logFilePath + "missingSquadrats.log", "a")  # append mode
-zoom = 17
+# zoom = 17
 script_dir = os.path.dirname(__file__) + "/" #<-- absolute dir the script is in
 missing_squadrats_dir = script_dir
 kmlFilePath = missing_squadrats_dir + '../../jobs/missing_squadrats/' + kmlFile
@@ -288,7 +303,7 @@ gridNW = deg2num(NWlat, NWlon, zoom)
 gridSE = deg2num(SElat, SElon, zoom)
 print('Grid corners: ', gridNW, ' and ', gridSE, ', dimensions: ', gridSE[1] - gridNW[1], ' and ', gridSE[0] - gridNW[0])
 
-# Read a kml file and store the squadratinhos polygons
+# Read a kml file and store the tile polygons
 data = readKmlFile(kmlFilePath)
 
 print('Time after bounding box test: ', time.perf_counter() - tic, ' seconds<BR>\r\n')
@@ -307,10 +322,10 @@ nodes, ways = points2lines(tilePoints, nodeID, wayID)
 print('Time before osm write: ', time.perf_counter() - tic, ' seconds<BR>\r\n')
 
 # Create mkgmap mkgmap.style and typ.txt
-writeMkgmapStyleTyp(squadratinhosLineWeight, squadratinhosColor, script_dir)
+writeMkgmapStyleTyp(lineWeight, lineColor, script_dir, zoom)
 
 # Create an osm file
-shapely2osm(nodes, ways)
+shapely2osm(nodes, ways, zoom)
 
 print('Time after osm write: ', time.perf_counter() - tic, ' seconds<BR>\r\n')
 print('Number of tiles: ', (gridSE[1] - gridNW[1]) *  (gridSE[0] - gridNW[0]))
