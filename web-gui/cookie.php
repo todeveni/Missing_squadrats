@@ -2,13 +2,13 @@
 <!DOCTYPE html>
 
 <?php
-$cookie_name = "user";
-# $cookie_value = "John Doe";
-$mapCenter = array("latCenter"=>61.24, "lonCenter"=>24.90);
-$squadratinhos = array("squadratinhosLineWeight"=>5, "squadratinhosColor"=>"#853A3A");
+//$cookie_name = "user";
+//# $cookie_value = "John Doe";
+//$mapCenter = array("latCenter"=>61.24, "lonCenter"=>24.90);
+//$squadratinhos = array("squadratinhosLineWeight"=>5, "squadratinhosColor"=>"#853A3A");
 # https://www.w3schools.com/php/php_cookies.asp
 # https://stackoverflow.com/questions/32567709/how-to-store-raw-json-string-in-cookie-with-php
-setcookie("MissingSquadrats", json_encode($mapCenter), time() + (86400 * 30)); // 86400 = 1 day
+//setcookie("MissingSquadrats", json_encode($mapCenter), time() + (86400 * 30)); // 86400 = 1 day
 ?>
 
 <html>
@@ -19,6 +19,48 @@ setcookie("MissingSquadrats", json_encode($mapCenter), time() + (86400 * 30)); /
 
 <p>
 <h1>Cookie test</h1>
+
+<?php
+$zoomLevel = 14;
+$cookie_name = "MissingSquadrats";
+$a = json_decode($_COOKIE[$cookie_name]);
+// echo "Value is: " . $_COOKIE[$cookie_name];
+
+var_dump(property_exists($a, "squadratsColor"));
+if (property_exists($a, "squadratsColor")) {
+  $squadratsColor = $a->squadratsColor;
+  $squadratsLineWeight = $a->squadratsLineWeight;
+} else {
+  $squadratsColor = "#853A3A";
+  $squadratsLineWeight = 2;
+}
+echo "$squadratsColor";
+
+echo "<table border=\"1\">";
+foreach ($a as $x => $y) {
+  echo "<tr><td>$x</td><td>$y</td>";
+}
+echo "</table>";
+if (isset($_COOKIE[$cookie_name])) {
+  if ($zoomLevel == 14) {
+    if (property_exists($a, "squadratinhosColor")) {
+      $squadratinhosColor = $a->squadratinhosColor;
+      $squadratinhosLineWeight = $a->squadratinhosLineWeight;
+    } else {
+      $squadratinhosColor = "#853A3A";
+      $squadratinhosLineWeight = 2;
+    }
+  }
+}
+
+//  if (typeof data.squadratinhosColor === 'undefined') {
+//    var squadratinhosColor = "#853A3A";
+//  }
+//  else {
+//    var squadratinhosColor = data.squadratinhosColor;
+//    var lineColor = squadratinhosColor;
+//  }
+?>
 
 <script>
 

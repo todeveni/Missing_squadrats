@@ -36,12 +36,17 @@
   SE lat
   <input type="text" id="SElat" name="SElat" value="59.8"><br>
   Line color
-  <input type="color" id="squadratinhosColor" name="squadratinhosColor" value="#853A3A">
+  <input type="color" id="lineColor" name="lineColor" value="#853A3A">
   Line weight
-  <input type="number" id="squadratinhosLineWeight" name="squadratinhosLineWeight" min="1" max="5" value="5">
+  <input type="number" id="lineWeight" name="lineWeight" min="1" max="10" value="5"><br>
+  <label for="zoomLevel">Select a zoom level:</label>
+  <select id="zoomLevel" name="zoomLevel">
+    <option selected value="17">Squadratinhos</option>
+    <option value="14">Squadrats</option>
+  </select><br>
+  <input type="submit" id="submitButton" value="Upload kml file" name="submit">
   <input type="checkbox" id="cookie" name="cookie" value="cookie">
-  <label for="cookie"> Save map location into a cookie</label><br>
-  <input type="submit" id="submitButton" value="Upload kml file" name="submit"><br>
+  <label for="cookie"> Save map properties into a cookie</label><br>
   Total number of squadratinhos on map area: <span id="tilesNumber"></span><!--  , NWlon: <span id="NWlonNumber"></span>, NWlat: <span id="NWlatNumber"></span>, NWlon: <span id="SElonNumber"></span>, NWlat: <span id="SElatNumber"></span> -->
 <!--  <button type="button" onclick="submitForm()" id="clk">Submit</button> -->
 </form>
@@ -159,6 +164,7 @@ Version: 20250124
 
 // var version = 20250124;
 var maxNumberOfSquadrats = 200000;
+var zoomLevel = document.getElementById("zoomLevel").value
 document.getElementById("maxNumberOfSquadrats").innerHTML = maxNumberOfSquadrats;
 
 // https://stackoverflow.com/questions/5968196/how-do-i-check-if-a-cookie-exists
@@ -202,23 +208,48 @@ if (getCookie("MissingSquadrats") == null) {
 	var lonCenter = 24.90;
   var squadratinhosColor = "#853A3A";
   var squadratinhosLineWeight = 5;
-}
-else {
+  var squadratsColor = "#853A3A";
+  var squadratsLineWeight = 5;
+} else {
 	var data = JSON.parse(getCookieByName("MissingSquadrats"));
   if (typeof data.mapCenterLat === 'undefined') {
-    var latCenter = data.latCenter;
+    var latCenter = 60.24;
   }
   else {
     var latCenter = data.mapCenterLat;
   }
   if (typeof data.mapCenterLon === 'undefined') {
-    var lonCenter = data.lonCenter;
+    var lonCenter = 24.90;
   }
   else {
     var lonCenter = data.mapCenterLon;
   }
-  var squadratinhosColor = data.squadratinhosColor;
-  var squadratinhosLineWeight = data.squadratinhosLineWeight;
+  if (typeof data.squadratinhosColor === 'undefined') {
+    var squadratinhosColor = "#853A3A";
+  }
+  else {
+    var squadratinhosColor = data.squadratinhosColor;
+    var lineColor = squadratinhosColor;
+  }
+  if (typeof data.squadratinhosLineWeight === 'undefined') {
+    var squadratinhosLineWeight = 5;
+  }
+  else {
+    var squadratinhosLineWeight = data.squadratinhosLineWeight;
+    var lineWeight = squadratinhosLineWeight;
+  }
+  if (typeof data.squadratsColor === 'undefined') {
+    var squadratsColor = "#853A3A";
+  }
+  else {
+    var squadratsColor = data.squadratsColor;
+  }
+  if (typeof data.squadratsLineWeight === 'undefined') {
+    var squadratsLineWeight = 5;
+  }
+  else {
+    var squadratsLineWeight = data.squadratsLineWeight;
+  }
 }
 
 // https://leafletjs.com/examples/zoom-levels/
@@ -234,69 +265,70 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
 
-var bounds = map.getBounds();
-var northWest = bounds.getNorthWest();
-var southEast = bounds.getSouthEast();
-var tiles = countTiles(northWest.lng, northWest.lat, southEast.lng, southEast.lat);
-updateForm(northWest.lng, northWest.lat, southEast.lng, southEast.lat);
+var tiles = countTiles();
+updateForm();
 document.getElementById("tilesNumber").innerHTML = tiles;
 if (tiles > maxNumberOfSquadrats) {
 	document.getElementById("submitButton").disabled = true;
 } else {
 	document.getElementById("submitButton").disabled = false;
 }
-document.getElementById("squadratinhosColor").value = squadratinhosColor;
-document.getElementById("squadratinhosLineWeight").value = squadratinhosLineWeight;
+document.getElementById("lineColor").value = squadratinhosColor;
+document.getElementById("lineWeight").value = squadratinhosLineWeight;
 
 // https://stackoverflow.com/questions/32734897/how-to-get-map-box-coordinates-from-marker-in-leaflet
 map.on('moveend', function() {
-    var bounds = map.getBounds();
-    var northWest = bounds.getNorthWest();
-    var southEast = bounds.getSouthEast();
-//	alert("Number of tiles: " + tiles);
-//	document.getElementById("NWlon").value = northWest.lng;
-	var tiles = countTiles(northWest.lng, northWest.lat, southEast.lng, southEast.lat);
-	updateForm(northWest.lng, northWest.lat, southEast.lng, southEast.lat);
-	document.getElementById("tilesNumber").innerHTML = tiles;
-//	document.getElementById("NWlonNumber").innerHTML = lon2tile(northWest.lng,14);
-//	document.getElementById("NWlatNumber").innerHTML = lat2tile(northWest.lat,14);
-//	document.getElementById("SElonNumber").innerHTML = lon2tile(southEast.lng,14);
-//	document.getElementById("SElatNumber").innerHTML = lat2tile(southEast.lat,14);
-	if (tiles > maxNumberOfSquadrats) {
-		document.getElementById("submitButton").disabled = true;
-	} else {
-		document.getElementById("submitButton").disabled = false;
-	}
-	});
+  countTiles();
+  updateForm();
+});
 
 map.on('zoomend', function() {
-    var bounds = map.getBounds();
-    var northWest = bounds.getNorthWest();
-    var southEast = bounds.getSouthEast();
-//	alert("Number of tiles: " + tiles);
-//	document.getElementById("NWlon").value = northWest.lng;
-	var tiles = countTiles(northWest.lng, northWest.lat, southEast.lng, southEast.lat);
-	updateForm(northWest.lng, northWest.lat, southEast.lng, southEast.lat);
-	document.getElementById("tilesNumber").innerHTML = tiles;
-	if (tiles > maxNumberOfSquadrats) {
-		document.getElementById("submitButton").disabled = true;
-	} else {
-		document.getElementById("submitButton").disabled = false;
-	}
-	});
+  countTiles();
+  updateForm();
+});
 
-function updateForm(northWestLng, northWestLat, southEastLng, southEastLat) {
-	document.getElementById("NWlon").value = northWestLng;
-	document.getElementById("NWlat").value = northWestLat;
-	document.getElementById("SElon").value = southEastLng;
-	document.getElementById("SElat").value = southEastLat;
+// https://gomakethings.com/how-to-detect-all-changes-to-a-form-with-vanilla-javascript/
+let select = document.querySelector('select');
+select.addEventListener('input', function (event) {
+  zoomLevel = document.getElementById("zoomLevel").value
+  if (zoomLevel == 14) {
+    squadratinhosColor = document.getElementById("lineColor").value
+    squadratinhosLineWeight = document.getElementById("lineWeight").value
+    document.getElementById("lineColor").value = squadratsColor;
+    document.getElementById("lineWeight").value = squadratsLineWeight;
+  } else if (zoomLevel == 17) {
+    squadratsColor = document.getElementById("lineColor").value
+    squadratsLineWeight = document.getElementById("lineWeight").value
+    document.getElementById("lineColor").value = squadratinhosColor;
+    document.getElementById("lineWeight").value = squadratinhosLineWeight;
+  }
+  countTiles();
+});
+
+function updateForm() {
+  var bounds = map.getBounds();
+  var northWest = bounds.getNorthWest();
+  var southEast = bounds.getSouthEast();
+	document.getElementById("NWlon").value = northWest.lng;
+	document.getElementById("NWlat").value = northWest.lat;
+	document.getElementById("SElon").value = southEast.lng;
+	document.getElementById("SElat").value = southEast.lat;
 	return;
 }
 
-function countTiles(northWestLng, northWestLat, southEastLng, southEastLat) {
-	var tilesLon = lon2tile(southEastLng,17) - lon2tile(northWestLng,17);
-	var tilesLat = lat2tile(southEastLat,17) - lat2tile(northWestLat,17);
+function countTiles() {
+  var bounds = map.getBounds();
+  var northWest = bounds.getNorthWest();
+  var southEast = bounds.getSouthEast();
+	var tilesLon = lon2tile(southEast.lng,zoomLevel) - lon2tile(northWest.lng,zoomLevel);
+	var tilesLat = lat2tile(southEast.lat,zoomLevel) - lat2tile(northWest.lat,zoomLevel);
 	var tiles = tilesLon * tilesLat;
+	document.getElementById("tilesNumber").innerHTML = tiles;
+ 	if (tiles > maxNumberOfSquadrats) {
+		document.getElementById("submitButton").disabled = true;
+	} else {
+		document.getElementById("submitButton").disabled = false;
+	}
 	return(tiles);
 }
 

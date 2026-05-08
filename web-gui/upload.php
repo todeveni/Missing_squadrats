@@ -5,10 +5,10 @@
 function clean($string) {
    $string = str_replace(' ', '_', $string); // Replaces all spaces with hyphens.
 
-   return preg_replace('/[^A-Za-z0-9]/', '', $string); // Removes special chars.
+   return preg_replace('/[^A-Za-z0-9\-]/', '', $string); // Removes special chars.
 }
 
-function validate_squadrats_kml($file): bool {
+function is_valid_squadrats_kml($file): bool {
   libxml_use_internal_errors(true);
 
   $dom = new \DOMDocument();
@@ -36,41 +36,53 @@ function validate_squadrats_kml($file): bool {
   return FALSE;
 }
 
-
 $tmpName = $_FILES['fileToUpload']['tmp_name'];
 
-if (empty($tmpName) || !validate_squadrats_kml($tmpName)) {
+if (empty($tmpName) || !is_valid_squadrats_kml($tmpName)) {
   die("Invalid .kml file.");
 }
-
+$cookie_name = "MissingSquadrats";
 $userName = clean($_POST['name']);
 $NWlon = (float) $_POST['NWlon'] ?? 0;
 $NWlat = (float) $_POST['NWlat'] ?? 0;
 $SElon = (float) $_POST['SElon'] ?? 0;
 $SElat = (float) $_POST['SElat'] ?? 0;
-$squadratinhosLineWeight = (float) $_POST['squadratinhosLineWeight'] ?? 0;
-$squadratinhosColor = str_replace("#", "", clean($_POST['squadratinhosColor']));
-$saveCookie = !empty($_POST['cookie']);
+$lineWeight = (int) $_POST['lineWeight'] ?? 0;
+$lineColor = str_replace("#", "", clean($_POST['lineColor']));
+$zoomLevel = (int) $_POST['zoomLevel'] ?? 0;
 $target_dir = "../../jobs/missing_squadrats/";
 $fileName = date('Y-m-d') . '-' . $userName;
 
 if (!$NWlon || !$NWlat || !$SElon || !$SElat) {
   die('Invalid coordinates.');
 }
-# echo "Name: " . $userName . "<BR>\r\n";
 
-if ($saveCookie) {
-  # $mapCenter = array("latCenter"=>61.24, "lonCenter"=>24.90);
-  $missinSquadrats = array(
+# echo "Name: " . $userName . "<BR>\r\n";
+if (!empty($_POST['cookie'])) {
+  $cookieValues = [
     "mapCenterLat" => $SElat + (($NWlat - $SElat) / 2),
     "mapCenterLon" => $SElon + (($NWlon - $SElon) / 2),
-    "squadratinhosLineWeight" => $squadratinhosLineWeight,
-    "squadratinhosColor" => "#" . $squadratinhosColor,
-  );
-  # $squadratinhos = array("squadratinhosLineWeight"=>$squadratinhosLineWeight, "squadratinhosColor"=>$squadratinhosColor);
-  # https://www.w3schools.com/php/php_cookies.asp
-  # https://stackoverflow.com/questions/32567709/how-to-store-raw-json-string-in-cookie-with-php
-  setcookie("MissingSquadrats", json_encode($missinSquadrats), time() + (86400 * 30)); // 86400 = 1 day
+    "zoomLevel" => $zoomLevel,
+    "squadratinhosLineWeight" => $lineWeight,
+    "squadratinhosColor" => "#$lineColor",
+    "squadratsLineWeight" => $lineWeight,
+    "squadratsColor" =>  "#$lineColor",
+  ];
+
+  if (isset($_COOKIE[$cookie_name])) {
+    $previousValues = json_decode($_COOKIE[$cookie_name], true);
+    // Never override the color or weight for opposite zoom level.
+    $selector = $zoomLevel === 14 ? "squadratinhos" : "squadrats";
+
+    foreach (["{$selector}Color", "{$selector}LineWeight"] as $key) {
+      if (!isset($previousValues[$key])) {
+        continue;
+      }
+      $cookieValues[$key] = $previousValues[$key];
+    }
+  }
+
+  setcookie("MissingSquadrats", json_encode($cookieValues), time() + (86400 * 30)); // 86400 = 1 day
 }
 
 ?>
@@ -102,8 +114,9 @@ $job = implode(',', [
   'nwlat' => $NWlat,
   'selon' => $SElon,
   'selat' => $SElat,
-  'squadratinhosLineWeight' => $squadratinhosLineWeight,
-  'squadratinhosColor' => $squadratinhosColor,
+  'lineWeight' => $lineWeight,
+  'lineColor' => $lineColor,
+  'zoomLevel' => $zoomLevel,
 ]);
 file_put_contents($target_dir . $fileName . '.csv', $job);
 ?>
